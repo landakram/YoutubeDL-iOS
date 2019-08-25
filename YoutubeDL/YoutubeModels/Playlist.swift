@@ -11,11 +11,21 @@ import Foundation
 final class Playlist : NSObject, NSCoding {
     
     var state = Status.Loaded
-    var videos = [Video]()
+    var _videos = [Video]()
+    var videos: [Video] {
+        get {
+            let sorted = _videos.sorted { (v1, v2) -> Bool in
+                order[v1.id] ?? -1 < order[v2.id] ?? -1
+            }
+            return sorted
+        }
+    }
 
     var title: String?
     var id: String?
     var url: URL
+    
+    var order = [String: Int]()
     
     enum Status {
         case Loading
@@ -29,39 +39,23 @@ final class Playlist : NSObject, NSCoding {
     required convenience init(coder decoder: NSCoder) {
         self.init(url: decoder.decodeObject(forKey: "url") as! URL)
         title = decoder.decodeObject(forKey: "title") as? String
-        videos = decoder.decodeObject(forKey: "videos") as! [Video]
+        _videos = decoder.decodeObject(forKey: "videos") as! [Video]
         id = decoder.decodeObject(forKey: "id") as? String
+        order = decoder.decodeObject(forKey: "order") as! [String: Int]
     }
     
     func addVideo(video: Video) {
         if findVideo(id: video.id) == nil {
-            videos.append(video);
+            _videos.append(video);
         }
     }
     
     func findVideo(id: String) -> Video? {
-        return videos.first { $0.id == id }
-    }
-    
-    func updateFromJson(json: [String: AnyObject]) {
-        title = json["title"] as? String
-        id = json["id"] as! String?
-        
-        let entries = json["entries"]! as! [[String: AnyObject]]
-        let videos = entries.map { Video.fromJson(json: $0) }
-        // Keep old video if we already have it, since it include played state etc.
-        self.videos = videos.map { findVideo(id: $0.id) ?? $0 }
-    }
-        
-    class func fromJson(json: [String: AnyObject]) -> Playlist {
-        let playlist = Playlist(url: URL(string: json["webpage_url"]! as! String)!)
-        playlist.updateFromJson(json: json)
-        
-        return playlist
+        return _videos.first { $0.id == id }
     }
     
     func deleteFiles() {
-        videos.forEach { (video) in
+        _videos.forEach { (video) in
             video.deleteFile()
         }
     }
@@ -70,6 +64,7 @@ final class Playlist : NSObject, NSCoding {
         coder.encode(title, forKey: "title")
         coder.encode(id, forKey: "id")
         coder.encode(url, forKey: "url")
-        coder.encode(videos, forKey: "videos")
+        coder.encode(_videos, forKey: "videos")
+        coder.encode(order, forKey: "order")
     }
 }

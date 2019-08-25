@@ -15,3 +15,5 @@ void YDL_downloadVideo(NSURL *url, NSURL *filePath);
 
 // Extracting playlist data, can accept local progress
 void YDL_playlistDataForUrl(NSURL *url, YDL_progressUpdate callback);
+
+void YDL_loadVideoMetadata(NSURL *url, YDL_progressUpdate callback);

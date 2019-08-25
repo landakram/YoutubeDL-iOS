@@ -22,6 +22,8 @@ class PlaylistViewController: UITableViewController {
         print("Loaded Subcontroller...")
         // Do any additional setup after loading the view, typically from a nib.
         // self.configureView()
+        self.tableView.rowHeight = 120
+        self.tableView.estimatedRowHeight = 120
     }
 
     override func didReceiveMemoryWarning() {
@@ -39,6 +41,7 @@ class PlaylistViewController: UITableViewController {
             [weak self] in
             self?.tableView.reloadData()
             sender.endRefreshing()
+            DataStore.sharedStore.saveToDisk()
         }
     }
 

@@ -11,7 +11,7 @@ import UIKit
 class VideoViewCell: UITableViewCell {
     @IBOutlet weak var title: UILabel!
     @IBOutlet weak var detail: UILabel!
-    @IBOutlet weak var thumbnail: UIImageView!
+    @IBOutlet weak var thumbnail: UIImageView!  
     
     func detailText(video: Video) -> String {
         if video.hasBeenDownloaded() {
@@ -41,6 +41,7 @@ class VideoViewCell: UITableViewCell {
     
     func updateFrom(video: Video) {
         title.text = video.title
+        title.lineBreakMode = .byWordWrapping
         detail.text = detailText(video: video)
         thumbnail.sd_setImage(with: URL(string: "https://i.ytimg.com/vi/\(video.id)/maxresdefault.jpg")!)
         thumbnail.alpha = video.hasBeenDownloaded() ? 1 : 0.2

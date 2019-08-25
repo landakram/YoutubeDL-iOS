@@ -105,6 +105,15 @@ void YDL_playlistDataForUrl(NSURL *url, YDL_progressUpdate callback) {
     PyObject_CallFunction(function, "sOO", [[url absoluteString] UTF8String], progress, context);
 }
 
+void YDL_loadVideoMetadata(NSURL *url, YDL_progressUpdate callback) {
+    PyObject *function = getModuleFn("pytest", "load_video_metadata");
+    
+    PyObject *context = PyCapsule_New((__bridge void*)callback, NULL, NULL);
+    PyObject *progress = PyCFunction_New(&playlistCallbackDef, NULL);
+    
+    PyObject_CallFunction(function, "sOO", [[url absoluteString] UTF8String], progress, context);
+}
+
 void YDL_downloadVideo(NSURL *url, NSURL *filePath) {
     PyObject *function = getModuleFn("pytest", "download");
     PyObject *progress = PyCFunction_New(&progressCallback, NULL);

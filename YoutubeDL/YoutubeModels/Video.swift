@@ -13,6 +13,7 @@ final class Video : NSObject, NSCoding {
     var title: String
     var progress: DownloadProgress?
     var duration = 0
+    var details: String = ""
     var watchedPosition = 0
     
     init(id: String, title: String) {
@@ -26,6 +27,7 @@ final class Video : NSObject, NSCoding {
         self.init(id: id, title: title)
         duration = decoder.decodeInteger(forKey: "duration")
         watchedPosition = decoder.decodeInteger(forKey: "watchedPosition")
+        details = decoder.decodeObject(forKey: "details") as! String
     }
 
     func encode(with coder: NSCoder) {
@@ -33,6 +35,7 @@ final class Video : NSObject, NSCoding {
         coder.encode(id, forKey: "id")
         coder.encode(duration, forKey: "duration")
         coder.encode(watchedPosition, forKey: "watchedPosition")
+        coder.encode(details, forKey: "details")
     }
 
     func downloadLocation() -> URL {
@@ -41,6 +44,10 @@ final class Video : NSObject, NSCoding {
     }
     
     var url: URL {
+        return Video.getURL(id: id)
+    }
+    
+    static func getURL(id: String) -> URL {
         return URL(string: "https://www.youtube.com/watch?v=\(id)")!
     }
     
@@ -74,12 +81,4 @@ final class Video : NSObject, NSCoding {
     func hasBeenDownloaded() -> Bool {
         return FileManager.default.fileExists(atPath: downloadLocation().path)
     }
-    
-    class func fromJson(json: [String: AnyObject]) -> Video {
-        print("Deserialize from json! \(json)")
-        let video = Video(id: json["id"]! as! String, title: json["title"]! as! String)
-        video.duration = Int(json["duration"]! as! NSNumber)
-        return video
-    }
-
 }

@@ -35,6 +35,10 @@ class DataStore {
         saveToDisk()
     }
     
+    func reload() {
+        playlists = loadFromDisk()
+    }
+    
     func loadFromDisk() -> [Playlist] {
         print("Loading preferences from \(prefPath())")
         if let playlists = NSKeyedUnarchiver.unarchiveObject(withFile: prefPath()) as? [Playlist] {

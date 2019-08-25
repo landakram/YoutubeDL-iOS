@@ -37,6 +37,21 @@ def download(url, output_file, progress_cb):
         print(traceback.format_exc())
         raise
 
+def load_video_metadata(url, update_cb, context=None):
+    try:
+        ytb = youtube_dl.YoutubeDL({"nocheckcertificate": True})
+        video_extractor = youtube.YoutubeIE()
+        video_extractor.set_downloader(ytb)
+        entry = video_extractor.extract(url)
+        update_cb(context, json.dumps({
+            "type": "entry",
+            "data": entry
+        }))
+    except Exception:
+        print "Error Loading Video:"
+        print(traceback.format_exc())
+        raise
+
 def load_playlist(url, update_cb, context=None):
     try:
         print 
@@ -44,20 +59,14 @@ def load_playlist(url, update_cb, context=None):
         extractor = youtube.YoutubePlaylistIE()
         extractor.set_downloader(ytb)
         data = extractor.extract(url)
-        entries = data.pop("entries")
+        entries = list(data.pop("entries"))
 
         update_cb(context, json.dumps({
-            'type': 'initial',
-            'data': data
+            'data': data,
+            'entries': entries
         }))
-    
-        for entry in entries:
-            update_cb(context, json.dumps({
-                "type": "entry",
-                "data": entry
-            }))
     except Exception:
         print "Error Loading Playlist:"
         print(traceback.format_exc())
         raise
-    
+

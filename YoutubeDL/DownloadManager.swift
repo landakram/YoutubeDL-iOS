@@ -39,27 +39,60 @@ class DownloadManager {
         queue.async {
             playlist.state = .Loading
             YDL_playlistDataForUrl(playlist.url, { (data) in
-                print("Have playlist data: \(data)")
-                let type = data!["type"]! as! String
-                let attrs = data!["data"]! as! [String: String]
+                let attrs = data!["data"]! as! [String: Any]
+                let entries = data!["entries"]! as! [[String: Any]]
                 
-                if type == "initial" {
-                    playlist.id = attrs["id"]
-                    playlist.title = attrs["title"]!
-                    DispatchQueue.main.async(execute: onUpdate)
-                    print("Updated playlist attrs \(playlist.id) \(playlist.title)")
-                } else if type == "entry" {
-                    let video = Video(id: attrs["id"]!, title: attrs["title"]!)
-                    playlist.addVideo(video: video)
-                    DispatchQueue.main.async(execute: onUpdate)
+                let entryIds = entries.map { (entry) in entry["id"] as! String }
+                let order: [String: Int] = entryIds.enumerated().reduce([String: Int]()) { (acc, arg1) -> [String: Int] in
+                    let (offset, element) = arg1
+                    var acc = acc
+                    acc.updateValue(offset, forKey: element)
+                    return acc
                 }
+                
+                playlist.id = attrs["id"] as? String
+                playlist.title = attrs["title"] as? String
+                playlist.order = order
+                
+                DispatchQueue.main.async(execute: onUpdate)
+                
+                self.processEntries(playlist: playlist, entries: entries, onUpdate: onUpdate)
             })
             DispatchQueue.main.async {
                 playlist.state = .Loaded
                 onUpdate()
             }
-
         }
+    }
+    
+    func processEntries(playlist: Playlist, entries: [[String: Any]], onUpdate: @escaping () -> ()) {
+        playlist._videos.removeAll(where: { (video) -> Bool in
+            playlist.order[video.id] == nil
+        })
+        
+        for entry in entries {
+            if playlist.findVideo(id: entry["id"] as! String) == nil {
+                YDL_loadVideoMetadata(Video.getURL(id: entry["id"] as! String), { (data) in
+                    let attrs = data!["data"]! as! [String: Any]
+                    let id = attrs["id"] as! String
+                    let title = attrs["title"] as! String
+                    let duration = attrs["duration"] as? Int ?? 0
+                    let details = attrs["description"] as? String ?? ""
+                    
+                    let video = self.createVideo(id: id, title: title, duration: duration, details: details)
+                    
+                    playlist.addVideo(video: video)
+                    DispatchQueue.main.async(execute: onUpdate)
+                })
+            }
+        }
+    }
+    
+    func createVideo(id: String, title: String, duration: Int, details: String) -> Video {
+        let video = Video(id: id, title: title)
+        video.duration = duration
+        video.details = details
+        return video
     }
     
     func downloadVideo(video: Video, onUpdate: @escaping (DownloadProgress) -> ()) {

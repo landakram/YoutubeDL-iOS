@@ -50,7 +50,7 @@ class PlaylistsViewController: UITableViewController {
         update()
     }
     
-    func insertNewObject(_ sender: Any) {
+    @objc func insertNewObject(_ sender: Any) {
         let alert = UIAlertController(title: "Add Playlist", message: "Youtube playlist URL", preferredStyle: UIAlertControllerStyle.alert)
         alert.addTextField { (textField) in
             textField.placeholder = "https://www.youtube.com/playlist?list=PLBsP89CPrMeMKjHnLfO3WAhiOOxiv5Xqo"
