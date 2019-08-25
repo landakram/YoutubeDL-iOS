@@ -16,9 +16,9 @@ class VideoViewCell: UITableViewCell {
     func detailText(video: Video) -> String {
         if video.hasBeenDownloaded() {
             if (video.watchedPosition == 0) {
-                return "\(video.time) - NEW"
+                return "\(video.formattedTime) - NEW"
             } else {
-                return "\(video.time) - Watched up to \(video.watchedPosition / 60):\(video.watchedPosition % 60)"
+                return "\(video.formattedTime) - Watched up to \(video.formattedWatchPosition)"
             }
         }
 
@@ -34,9 +34,9 @@ class VideoViewCell: UITableViewCell {
         }
 
         if video.hasPartial() {
-            return "\(video.time) -- Partially Downloaded. Tap to resume."
+            return "\(video.formattedTime) -- Partially Downloaded. Tap to resume."
         }
-        return video.duration == 0 ? "" : "\(video.time)"
+        return video.duration == 0 ? "" : "\(video.formattedTime)"
     }
     
     func updateFrom(video: Video) {

@@ -70,8 +70,16 @@ final class Video : NSObject, NSCoding {
         }
     }
     
-    var time: String {
-        return "\(duration / 60):\(duration % 60)"
+    var formattedWatchPosition: String {
+        let minute = watchedPosition / 60
+        let second = watchedPosition % 60
+        return "\(String(format: "%02d", minute)):\(String(format: "%02d", second))"
+    }
+    
+    var formattedTime: String {
+        let minute = duration / 60
+        let second = duration % 60
+        return "\(String(format: "%02d", minute)):\(String(format: "%02d", second))"
     }
     
     func hasPartial() -> Bool {

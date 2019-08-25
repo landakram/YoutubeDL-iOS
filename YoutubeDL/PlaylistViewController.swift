@@ -118,19 +118,27 @@ class PlaylistViewController: UITableViewController {
         }
     }
     
+    override func tableView(_ tableView: UITableView,
+                            editActionsForRowAt indexPath: IndexPath)
+        -> [UITableViewRowAction]? {
+        let deleteAction = UITableViewRowAction(style: .destructive, title: "Delete Download") { (action, indexPath) in
+            self.playlist?.videos[indexPath.row].deleteFile()
+            self.tableView.reloadRows(at: [indexPath], with: .automatic)
+        }
+            
+        let video = playlist!.videos[indexPath.row]
+        if video.hasBeenDownloaded() {
+            return [deleteAction]
+        }
+        else {
+            return []
+        }
+    }
+
+    
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         // Return false if you do not want the specified item to be editable.
         return true
     }
-    
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            playlist?.videos[indexPath.row].deleteFile()
-            tableView.reloadData()
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
-        }
-    }
-
 }
 
