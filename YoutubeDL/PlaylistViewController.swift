@@ -19,10 +19,6 @@ class PlaylistViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        print("Loaded Subcontroller...")
-        // Do any additional setup after loading the view, typically from a nib.
-        // self.configureView()
         self.tableView.rowHeight = 120
         self.tableView.estimatedRowHeight = 120
     }
@@ -77,33 +73,59 @@ class PlaylistViewController: UITableViewController {
 
                 let controller = segue.destination as! AVPlayerViewController
                 
-                /// <#Description#>
+                controller.updatesNowPlayingInfoCenter = false
+                
                 let player = AVPlayer(url: playerUrl(video: video))
                 if video.watchedPosition > 0 {
                     player.seek(to: CMTime(seconds: Double(video.watchedPosition), preferredTimescale: 1))
                 }
                 
-                player.addPeriodicTimeObserver(forInterval: CMTime.init(seconds: 1.0, preferredTimescale: 1), queue: nil, using: {
-                    [weak self] (time) in
-                    video.watchedPosition = Int(time.seconds)
-                    DataStore.sharedStore.saveToDisk()
-                    self?.tableView.reloadRows(at: [indexPath], with: .none)
+                SDWebImageManager.shared()?.downloadImage(with: video.thumbnailUrl, options: [], progress: nil, completed: {
+                    (image, err, cacheType, finished, imageUrl) in
+                    player.addPeriodicTimeObserver(forInterval: CMTime.init(seconds: 1.0, preferredTimescale: 1), queue: nil, using: {
+                        [weak self] (time) in
+                        video.watchedPosition = Int(time.seconds)
+                        DataStore.sharedStore.saveToDisk()
+                        self?.tableView.reloadRows(at: [indexPath], with: .none)
+                        self?.updateNowPlaying(player: player, video: video, thumbnailImage: image)
+                    })
+                    
+                    
+                    self.setupRemoteTransportControls(player: player)
+                    controller.player = player
+                    player.play()
                 })
-                
-                // TODO: this doesn't quite work as expected / is buggy
-                setupRemoteTransportControls(player: player)
-                controller.player = player
-                player.play()
             }
         }
     }
     
-    func setupRemoteTransportControls(player: AVPlayer) {
-        // Get the shared MPRemoteCommandCenter
-        let commandCenter = MPRemoteCommandCenter.shared()
+    func updateNowPlaying(player: AVPlayer, video: Video, thumbnailImage: UIImage?) {
+        // Define Now Playing Info
+        var nowPlayingInfo = [String : Any]()
+        nowPlayingInfo[MPMediaItemPropertyTitle] = video.title
 
-        // Add handler for Play Command
-        commandCenter.playCommand.addTarget { [unowned self] event in
+        if let image = thumbnailImage {
+            nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: image.size) { size in
+                return image
+            }
+        }
+        
+        nowPlayingInfo[MPMediaItemPropertyArtist] = "YoutubeDL"
+                
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime().seconds
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = player.currentItem?.asset.duration.seconds
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.rate
+
+        // Set the metadata
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
+    
+    func setupRemoteTransportControls(player: AVPlayer) {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        
+        commandCenter.playCommand.removeTarget(nil)
+        commandCenter.playCommand.isEnabled = true
+        commandCenter.playCommand.addTarget { event in
             if player.rate == 0.0 {
                 player.play()
                 return .success
@@ -111,13 +133,38 @@ class PlaylistViewController: UITableViewController {
             return .commandFailed
         }
 
-        // Add handler for Pause Command
-        commandCenter.pauseCommand.addTarget { [unowned self] event in
+        commandCenter.pauseCommand.removeTarget(nil)
+        commandCenter.pauseCommand.isEnabled = true
+        commandCenter.pauseCommand.addTarget { event in
             if player.rate == 1.0 {
                 player.pause()
                 return .success
             }
             return .commandFailed
+        }
+        
+        commandCenter.skipForwardCommand.removeTarget(nil)
+        commandCenter.skipForwardCommand.isEnabled = true
+        commandCenter.skipForwardCommand.preferredIntervals = [NSNumber(15)]
+        commandCenter.skipForwardCommand.addTarget { (event) -> MPRemoteCommandHandlerStatus in
+            guard let command = event.command as? MPSkipIntervalCommand else {
+                return .noSuchContent
+            }
+            
+            player.seek(to: player.currentTime() + CMTime(seconds: command.preferredIntervals.first!.doubleValue, preferredTimescale: 1))
+            return .success
+        }
+        
+        commandCenter.skipBackwardCommand.removeTarget(nil)
+        commandCenter.skipBackwardCommand.isEnabled = true
+        commandCenter.skipBackwardCommand.preferredIntervals = [NSNumber(15)]
+        commandCenter.skipBackwardCommand.addTarget { (event) -> MPRemoteCommandHandlerStatus in
+            guard let command = event.command as? MPSkipIntervalCommand else {
+                return .noSuchContent
+            }
+            
+            player.seek(to: player.currentTime() - CMTime(seconds: command.preferredIntervals.first!.doubleValue, preferredTimescale: 1))
+            return .success
         }
     }
 
