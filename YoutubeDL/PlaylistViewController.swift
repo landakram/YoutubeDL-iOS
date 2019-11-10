@@ -11,6 +11,7 @@ import AVKit
 import AVFoundation
 import Dispatch
 import WebImage
+import MediaPlayer
 
 class PlaylistViewController: UITableViewController {
 
@@ -89,9 +90,34 @@ class PlaylistViewController: UITableViewController {
                     self?.tableView.reloadRows(at: [indexPath], with: .none)
                 })
                 
+                // TODO: this doesn't quite work as expected / is buggy
+                setupRemoteTransportControls(player: player)
                 controller.player = player
                 player.play()
             }
+        }
+    }
+    
+    func setupRemoteTransportControls(player: AVPlayer) {
+        // Get the shared MPRemoteCommandCenter
+        let commandCenter = MPRemoteCommandCenter.shared()
+
+        // Add handler for Play Command
+        commandCenter.playCommand.addTarget { [unowned self] event in
+            if player.rate == 0.0 {
+                player.play()
+                return .success
+            }
+            return .commandFailed
+        }
+
+        // Add handler for Pause Command
+        commandCenter.pauseCommand.addTarget { [unowned self] event in
+            if player.rate == 1.0 {
+                player.pause()
+                return .success
+            }
+            return .commandFailed
         }
     }
 

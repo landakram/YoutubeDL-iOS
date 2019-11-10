@@ -8,6 +8,7 @@
 
 import UIKit
 import AVFoundation
+import AVKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDelegate {
@@ -37,14 +38,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
     }
+    
+    var player: AVPlayer?
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+        // See https://developer.apple.com/documentation/avfoundation/media_assets_playback_and_editing/creating_a_basic_video_player_ios_and_tvos/playing_audio_from_a_video_asset_in_the_background
+        if let topViewController = UIApplication.shared.topMostViewController() {
+            if let topViewController = topViewController as? AVPlayerViewController {
+                self.player = topViewController.player
+                topViewController.player = nil
+            }
+        }
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+        if let topViewController = UIApplication.shared.topMostViewController() {
+            if let topViewController = topViewController as? AVPlayerViewController {
+                topViewController.player = self.player
+                self.player = nil
+            }
+        }
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
@@ -69,3 +82,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
 
 }
 
+extension UIViewController {
+    func topMostViewController() -> UIViewController {
+        
+        if let presented = self.presentedViewController {
+            return presented.topMostViewController()
+        }
+        
+        if let navigation = self as? UINavigationController {
+            return navigation.visibleViewController?.topMostViewController() ?? navigation
+        }
+        
+        if let tab = self as? UITabBarController {
+            return tab.selectedViewController?.topMostViewController() ?? tab
+        }
+        
+        return self
+    }
+}
+
+extension UIApplication {
+    func topMostViewController() -> UIViewController? {
+        return self.keyWindow?.rootViewController?.topMostViewController()
+    }
+}
