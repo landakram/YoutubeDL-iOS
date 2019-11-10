@@ -43,7 +43,7 @@ class VideoViewCell: UITableViewCell {
         title.text = video.title
         title.lineBreakMode = .byWordWrapping
         detail.text = detailText(video: video)
-        thumbnail.sd_setImage(with: URL(string: "https://i.ytimg.com/vi/\(video.id)/maxresdefault.jpg")!)
+        thumbnail.sd_setImage(with: video.thumbnailUrl)
         thumbnail.alpha = video.hasBeenDownloaded() ? 1 : 0.2
     }
 }

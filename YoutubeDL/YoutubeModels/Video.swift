@@ -82,6 +82,10 @@ final class Video : NSObject, NSCoding {
         return "\(String(format: "%02d", minute)):\(String(format: "%02d", second))"
     }
     
+    var thumbnailUrl: URL {
+        URL(string: "https://i.ytimg.com/vi/\(self.id)/maxresdefault.jpg")!
+    }
+    
     func hasPartial() -> Bool {
         return FileManager.default.fileExists(atPath: partialDownloadLocation.path)
     }
